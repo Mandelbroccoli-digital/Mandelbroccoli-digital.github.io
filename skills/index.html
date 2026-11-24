@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skills // Mandelbroccoli Coalition</title>
+<meta name="description" content="The Coalition skill registry: public Agensi-ready skills and internal coalitional tooling.">
+<link rel="stylesheet" href="../assets/broccolition.css">
+</head>
+<body>
+<header class="top">
+  <div class="sigil">🦉 OWL_6055 // SKILLS</div>
+  <nav>
+    <a href="../index.html">Services</a>
+    <a href="index.html" aria-current="page">Skills</a>
+    <a href="../blog/index.html">Writing</a>
+    <a href="../index.html#contact">Contact</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero">
+    <h1>Skill <em>Registry</em></h1>
+    <p class="lede">Portable, cross-harness capabilities. Public skills are stripped for external use and listed on Agensi; internal skills carry full Coalition provenance and local machine wiring.</p>
+    <div class="telemetry">
+      <span>SCHEMA: skills-index/v1</span>
+      <span>TIERS: 02</span>
+      <span>SOURCE: skills_repo/</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>// Browse</h2>
+    <div class="filters">
+      <input class="search" id="q" type="search" placeholder="Search skills, tags, services...">
+      <button class="btn" data-tier="all" aria-pressed="true">All</button>
+      <button class="btn" data-tier="public" aria-pressed="false">Public</button>
+      <button class="btn" data-tier="internal" aria-pressed="false">Internal</button>
+      <span class="count" id="count">loading...</span>
+    </div>
+    <div class="skill-grid" id="grid"></div>
+  </section>
+</main>
+
+<footer>
+  <span>© 2026 Mandelbroccoli Coalition — Solve et Coagula</span>
+  <span>FOR HONOUR AND GLORY</span>
+</footer>
+
+<script>
+const AGENSI = {
+  'aspect-skeptic': 'https://agensi.io/skills/aspect-skeptic-adversarial-premise-checker',
+  'aspect-verifier': 'https://agensi.io/skills/aspect-verifier-evidence-backed-quality-gate'
+};
+let DATA = [], tier = 'all', query = '';
+
+function tierOf(s) {
+  return (s.sourcePath || '').includes('/public/') || (s.sourcePath || '').includes('\\public\\') ? 'public' : 'internal';
+}
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function render() {
+  const items = DATA.filter(s => {
+    if (tier !== 'all' && tierOf(s) !== tier) return false;
+    if (!query) return true;
+    const hay = [s.slug, s.title, s.tagline, (s.services||[]).join(' '), (s.tags||[]).join(' ')].join(' ').toLowerCase();
+    return hay.includes(query);
+  });
+  document.getElementById('count').textContent = items.length + ' skill(s)';
+  document.getElementById('grid').innerHTML = items.map(s => {
+    const t = tierOf(s);
+    const link = AGENSI[s.slug];
+    return `<article class="card broccolition-panel">
+      <h3>${link ? '<a href="'+esc(link)+'" target="_blank" rel="noopener">'+esc(s.title)+'</a>' : esc(s.title)}</h3>
+      <p>${esc(s.tagline || s.gambitNotes || '')}</p>
+      <div>
+        <span class="tag tier-${t}">${t}</span>
+        <span class="tag">${esc(s.version)}</span>
+        <span class="tag">${esc(s.primaryService)}</span>
+      </div>
+      <div class="meta-line"><span class="status-dot"></span>${esc(s.status)} &nbsp;·&nbsp; ${esc(s.id)}</div>
+    </article>`;
+  }).join('') || '<p>No skills match this filter.</p>';
+}
+document.querySelectorAll('.btn[data-tier]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.btn[data-tier]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  tier = b.dataset.tier; render();
+});
+document.getElementById('q').oninput = e => { query = e.target.value.toLowerCase(); render(); };
+fetch('index.json').then(r => r.json()).then(d => { DATA = d.skills || []; render(); })
+  .catch(e => { document.getElementById('count').textContent = 'index unavailable'; console.error(e); });
+</script>
+</body>
+</html>
